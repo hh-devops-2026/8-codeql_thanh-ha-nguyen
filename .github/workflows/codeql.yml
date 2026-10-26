@@ -12,31 +12,7 @@ on:
     - cron: '0 0 * * 5'
 
 jobs:
-  create-matrix:
-    runs-on: ubuntu-latest
-    permissions:
-      # required for all workflows
-      security-events: write
-
-      # required to fetch internal or private CodeQL packs
-      packages: read
-
-      # only required for workflows in private repositories
-      actions: read
-      contents: read
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Detect languages from repo
-        id: set-matrix
-        uses: advanced-security/set-codeql-language-matrix@v1.6.0
-        with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          endpoint: ${{ github.event.repository.languages_url }} # Initializes the CodeQL tools for scanning.
-          
   analyze:
-    needs: create-matrix
-    if: ${{ needs.create-matrix.outputs.matrix != '[]' }}
     # Use ubuntu-latest for the analysis job
     # Define permissions for the job
     # Define language to be analyzed
@@ -53,7 +29,12 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.create-matrix.outputs.matrix) }}
+      matrix: 
+        include:
+          - language: actions
+            build-mode: none
+          - language: go
+            build-mode: autobuild
 
     steps:
       - name: Checkout repository
